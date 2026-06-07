@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helpeez - Reliable Daily Household Help with Guaranteed Backups</title>
+  <meta name="description" content="Subscribe to reliable, verified daily house help. Sweeping, cooking, utensils, and more with 100% guaranteed backup helpers on leave days.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">H</div>
+        <div>
+          <h1 class="logo-text">Helpeez</h1>
+          <span class="logo-tagline">Zero-Inconvenience Domestic Help</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#how-it-works" class="nav-link">How it Works</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <button class="btn-cta">Download App</button>
+      </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <span class="hero-tag">✨ Solving Daily Domestic Inconvenience</span>
+      <h2 class="hero-title">Daily household help, <span>without the daily stress</span>.</h2>
+      <p class="hero-subtitle">Standardized monthly subscriptions for cooking, cleaning, and washing. If your helper takes a leave, we automatically send a verified backup helper at your regular time slot.</p>
+    </section>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      
+      <!-- Panel 1: Pricing Estimator -->
+      <section class="panel" id="pricing-panel">
+        <h3 class="panel-title"><i class="fa-solid fa-calculator"></i> Build Your Membership</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Select the services your household needs daily to estimate your flat monthly subscription rate.</p>
+        
+        <div class="chore-list">
+          <!-- Chore 1 -->
+          <div class="chore-card active" data-chore="sweeping" data-price="1200">
+            <div class="chore-info">
+              <div class="chore-icon"><i class="fa-solid fa-broom"></i></div>
+              <div class="chore-details">
+                <h4>Sweeping & Mopping</h4>
+                <p>Once daily (living room, bedrooms, kitchen, balcony)</p>
+              </div>
+            </div>
+            <div class="chore-checkbox"></div>
+          </div>
+
+          <!-- Chore 2 -->
+          <div class="chore-card active" data-chore="utensils" data-price="800">
+            <div class="chore-info">
+              <div class="chore-icon"><i class="fa-solid fa-sink"></i></div>
+              <div class="chore-details">
+                <h4>Washing Utensils</h4>
+                <p>Once daily (up to 4 members household sinkload)</p>
+              </div>
+            </div>
+            <div class="chore-checkbox"></div>
+          </div>
+
+          <!-- Chore 3 -->
+          <div class="chore-card" data-chore="cooking" data-price="2500">
+            <div class="chore-info">
+              <div class="chore-icon"><i class="fa-solid fa-utensils"></i></div>
+              <div class="chore-details">
+                <h4>Daily Cooking</h4>
+                <p>Breakfast + Lunch or Dinner (2-3 traditional dishes)</p>
+              </div>
+            </div>
+            <div class="chore-checkbox"></div>
+          </div>
+
+          <!-- Chore 4 -->
+          <div class="chore-card" data-chore="bathrooms" data-price="600">
+            <div class="chore-info">
+              <div class="chore-icon"><i class="fa-solid fa-soap"></i></div>
+              <div class="chore-details">
+                <h4>Bathroom Deep Clean</h4>
+                <p>Twice weekly (scrubbing, disinfecting, and tile cleaning)</p>
+              </div>
+            </div>
+            <div class="chore-checkbox"></div>
+          </div>
+        </div>
+
+        <div class="price-summary">
+          <span class="price-label">Estimated Monthly Subscription:</span>
+          <span class="price-value" id="total-price">₹2,000/mo</span>
+        </div>
+
+        <button class="btn-cta" style="width: 100%; margin-top: 1.5rem; padding: 0.9rem; font-size: 1rem; border-radius: var(--radius-md);">
+          Start 3-Day Free Trial
+        </button>
+      </section>
+
+      <!-- Panel 2: Live Tracking Dashboard -->
+      <section class="panel" id="dashboard-panel">
+        <!-- Leave Notification Banner (Hidden initially) -->
+        <div class="alert-widget" id="leave-alert">
+          <div class="alert-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div class="alert-content">
+            <div class="alert-title">Leave Registered & Backup Dispatched</div>
+            <div class="alert-desc" id="alert-desc">Aarti Sharma has requested a sudden leave. We have dispatched your verified backup helper Rajeshwari.</div>
+          </div>
+        </div>
+
+        <div class="dashboard-header">
+          <h3 class="panel-title" style="margin-bottom: 0;"><i class="fa-solid fa-house-laptop"></i> Today's Schedule</h3>
+          <span class="status-badge" id="schedule-status">Helper Dispatched</span>
+        </div>
+
+        <!-- Helper Card -->
+        <div class="helper-card" id="helper-card">
+          <div class="helper-avatar-container">
+            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150" alt="Helper Avatar" class="helper-avatar" id="helper-img">
+            <div class="verified-badge" title="Background & Police Verified"><i class="fa-solid fa-shield-halved"></i></div>
+          </div>
+          <div class="helper-info">
+            <div class="helper-name" id="helper-name">Aarti Sharma</div>
+            <div class="helper-title">Your Assigned Daily Helper</div>
+            <div class="helper-rating">
+              <i class="fa-solid fa-star"></i>
+              <span id="helper-rating">4.8 <span>(142 cleanings completed)</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="tracker">
+          <div class="tracker-step completed" id="step-assigned">
+            <div class="tracker-icon"><i class="fa-solid fa-user-check"></i></div>
+            <div class="tracker-details">
+              <h5>Helper Assigned</h5>
+              <p id="desc-assigned">Aarti Sharma scheduled for 8:00 AM slot.</p>
+            </div>
+          </div>
+
+          <div class="tracker-step active" id="step-status">
+            <div class="tracker-icon" id="tracker-status-icon"><i class="fa-solid fa-location-dot"></i></div>
+            <div class="tracker-details">
+              <h5 id="title-status">On the way</h5>
+              <p id="desc-status">Aarti is currently 10 mins away from your location.</p>
+            </div>
+          </div>
+
+          <div class="tracker-step" id="step-complete">
+            <div class="tracker-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="tracker-details">
+              <h5>Service Completed</h5>
+              <p>Sign-off and rate your helper's service.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Console -->
+        <div class="sim-console">
+          <h4><i class="fa-solid fa-terminal"></i> Interactive Simulation Console</h4>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">
+            Test the core differentiator of Helpeez. Press the button to simulate the primary helper taking an unannounced leave.
+          </p>
+          <div class="sim-buttons">
+            <button class="btn-sim trigger-leave" id="btn-trigger-leave">Simulate Leave & Dispatch Backup</button>
+            <button class="btn-sim" id="btn-reset">Reset Dashboard</button>
+          </div>
+          <div class="sim-log" id="sim-log">
+            [System Log] Dashboard initialized. Daily tasks scheduled.
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Features Section -->
+    <section class="features-grid" id="how-it-works">
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-shield-heart"></i></div>
+        <h3>100% Verified & Trained</h3>
+        <p>Every helper undergoes biometric verification, police background checks, and professional training in cleaning and household etiquette.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-rotate"></i></div>
+        <h3>Auto-Backup Dispatch</h3>
+        <p>If your primary helper is on leave, our scheduling system dispatches an on-duty backup helper instantly to minimize domestic inconvenience.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-handshake-angle"></i></div>
+        <h3>Dignity & Fair Wages</h3>
+        <p>We provide helpers with structured careers, healthcare benefits, paid leaves, and fair wages, creating a professional and happy workforce.</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="margin-top: 4rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border-color); padding: 2rem 0;">
+      <p>&copy; 2026 Helpeez Technologies Pvt. Ltd. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

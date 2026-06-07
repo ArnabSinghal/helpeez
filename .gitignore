@@ -1,0 +1,21 @@
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+
+# Databases
+server/server.db
+helpeez/app/helpeez.db
+
+# Android
+.gradle/
+**/build/
+local.properties
+.idea/
+*.iml
+.DS_Store
