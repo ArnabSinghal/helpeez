@@ -28,7 +28,7 @@ object NetworkClient {
         return digest.fold("") { str, it -> str + "%02x".format(it) }
     }
 
-    suspend fun register(baseUrl: String, email: String, name: String, phone: String, passwordPlain: String, role: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun register(baseUrl: String, email: String, name: String, phone: String, passwordPlain: String, role: String): String? = withContext(Dispatchers.IO) {
         try {
             val url = "${baseUrl.trimEnd('/')}/register"
             val json = JSONObject().apply {
@@ -42,11 +42,23 @@ object NetworkClient {
             val request = Request.Builder().url(url).post(body).build()
 
             client.newCall(request).execute().use { response ->
-                return@withContext response.isSuccessful
+                if (response.isSuccessful) {
+                    return@withContext null
+                } else {
+                    val respStr = response.body?.string() ?: ""
+                    if (response.code == 400) {
+                        try {
+                            return@withContext JSONObject(respStr).getString("detail")
+                        } catch (e: Exception) {
+                            return@withContext "Registration failed. Email may already exist."
+                        }
+                    }
+                    return@withContext "Server error: ${response.code}"
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return@withContext false
+            return@withContext "API connection failed. Please verify the sync server is running at the configured URL."
         }
     }
 
@@ -71,6 +83,8 @@ object NetworkClient {
                         phone = respJson.getString("phone"),
                         role = respJson.optString("role", "owner")
                     )
+                } else if (response.code == 401) {
+                    return@withContext UserData(id = -1, email = "", name = "", phone = "", role = "")
                 }
             }
         } catch (e: Exception) {

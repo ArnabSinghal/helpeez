@@ -370,13 +370,18 @@ fun LoginScreen(
                                 if (syncEnabled) {
                                     val user = NetworkClient.login(syncUrl, email, password)
                                     if (user != null) {
-                                        // Cache locally for offline fallback
-                                        dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
-                                        isLoading = false
-                                        onLoginSuccess(user.id, user.role)
+                                        if (user.id == -1) {
+                                            isLoading = false
+                                            errorMessage = "Invalid email address or password."
+                                        } else {
+                                            // Cache locally for offline fallback
+                                            dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
+                                            isLoading = false
+                                            onLoginSuccess(user.id, user.role)
+                                        }
                                     } else {
                                         isLoading = false
-                                        errorMessage = "API connection failed. Please verify the sync server is running at the configured URL or turn OFF Local Server Sync to login locally."
+                                        errorMessage = "API connection failed. Please verify the sync server is running at the configured URL."
                                     }
                                 } else {
                                     val user = dbHelper.loginUser(email, password)
@@ -390,8 +395,8 @@ fun LoginScreen(
                             } else {
                                 // Sign Up Flow
                                 if (syncEnabled) {
-                                    val success = NetworkClient.register(syncUrl, email, name, phone, password, role)
-                                    if (success) {
+                                    val registerError = NetworkClient.register(syncUrl, email, name, phone, password, role)
+                                    if (registerError == null) {
                                         val user = NetworkClient.login(syncUrl, email, password)
                                         isLoading = false
                                         if (user != null) {
@@ -402,7 +407,7 @@ fun LoginScreen(
                                         }
                                     } else {
                                         isLoading = false
-                                        errorMessage = "API connection failed. Please verify the sync server is running at the configured URL, or turn OFF Local Server Sync to register locally."
+                                        errorMessage = registerError
                                     }
                                 } else {
                                     val success = dbHelper.registerUser(email, name, phone, password, role)
