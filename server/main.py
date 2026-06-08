@@ -210,10 +210,24 @@ def add_home(home: HomeSchema):
     conn.close()
     return {"status": "Home added successfully"}
 
+def auto_complete_expired_shifts(cursor):
+    import time
+    now_ms = int(time.time() * 1000)
+    cursor.execute("SELECT id, check_in_time, cleaning_duration FROM homes WHERE shift_status = 'started'")
+    rows = cursor.fetchall()
+    for row in rows:
+        home_id, check_in_time, cleaning_duration = row
+        if check_in_time > 0:
+            duration_ms = cleaning_duration * 60 * 1000
+            if now_ms >= check_in_time + duration_ms:
+                cursor.execute("UPDATE homes SET shift_status = 'completed' WHERE id = ?", (home_id,))
+
 @app.get("/homes", response_model=List[HomeSchema])
 def get_homes(user_id: Optional[int] = None, helper_id: Optional[int] = None):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    auto_complete_expired_shifts(cursor)
+    conn.commit()
     
     if user_id is not None:
         cursor.execute("""

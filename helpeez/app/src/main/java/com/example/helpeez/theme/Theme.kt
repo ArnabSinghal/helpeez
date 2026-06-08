@@ -25,9 +25,9 @@ private val LightColorScheme = lightColorScheme(
     background = LightBackground,
     surface = LightSurface,
     primaryContainer = LightPrimaryContainer,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
+    onPrimary = TextMain,
+    onSecondary = TextMain,
+    onTertiary = TextMain,
     onBackground = TextMain,
     onSurface = TextMain
 )
@@ -39,8 +39,8 @@ fun HelpeezTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    // We ignore dynamicColor to preserve branding integrity
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    // Force LightColorScheme regardless of darkTheme to ensure the theme is always lightish blue & white
+    val colorScheme = LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

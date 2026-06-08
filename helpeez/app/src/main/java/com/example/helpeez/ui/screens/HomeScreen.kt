@@ -72,6 +72,7 @@ fun HomeScreen(
 
     // Timer Ticker State
     var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var helperProgress by remember { mutableStateOf(0.1f) }
 
     // Holiday Replacement substitute state
     var isHolidayReplacement by remember { mutableStateOf(false) }
@@ -85,11 +86,14 @@ fun HomeScreen(
         currentUserProfile = dbHelper.getUserById(userId)
     }
 
-    // 1-Second Timer Ticker
+    // 1-Second Timer Ticker & Helper Map Progress simulation
     LaunchedEffect(Unit) {
+        var p = 0.1f
         while (true) {
             kotlinx.coroutines.delay(1000)
             currentTime = System.currentTimeMillis()
+            p = if (p >= 0.95f) 0.1f else p + 0.02f
+            helperProgress = p
         }
     }
 
@@ -180,19 +184,17 @@ fun HomeScreen(
         }
     }
 
-    // Auto-Transition Shift status to completed when timer runs down
-    if (activeHome != null && activeHome.shiftStatus == "started" && activeHome.checkInTime > 0L) {
-        val shiftDurationSeconds = activeHome.dailyCleaningDuration * 60L
-        val elapsedTimeSeconds = (currentTime - activeHome.checkInTime) / 1000
-        val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
-        if (remainingSeconds == 0L) {
-            LaunchedEffect(Unit) {
-                coroutineScope.launch {
-                    if (syncEnabled) {
-                        NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
-                    } else {
-                        dbHelper.updateHomeShiftStatus(activeHome.id, "completed", activeHome.checkInTime)
-                    }
+    // Auto-Transition Shift status to completed when timer runs down (Helper only, to avoid homeowner clock-drift race conditions)
+    LaunchedEffect(activeHome, currentTime, role) {
+        if (role == "helper" && activeHome != null && activeHome.shiftStatus == "started" && activeHome.checkInTime > 0L) {
+            val shiftDurationSeconds = activeHome.dailyCleaningDuration * 60L
+            val elapsedTimeSeconds = (currentTime - activeHome.checkInTime) / 1000
+            val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
+            if (remainingSeconds == 0L) {
+                if (syncEnabled) {
+                    NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
+                } else {
+                    dbHelper.updateHomeShiftStatus(activeHome.id, "completed", activeHome.checkInTime)
                 }
             }
         }
@@ -610,8 +612,8 @@ fun HomeScreen(
                                 Box(modifier = Modifier.fillMaxSize()) {
                                     LeafletMapView(
                                         address = activeHome.address,
-                                        progress = mockHelper.progress,
-                                        isBackup = false,
+                                        progress = helperProgress,
+                                        isBackup = isHolidayReplacement,
                                         modifier = Modifier.fillMaxSize()
                                     )
                                 }
@@ -1254,6 +1256,12 @@ fun LeafletMapView(
     modifier: Modifier = Modifier
 ) {
     val htmlContent = remember(address) {
+        val escapedAddress = address
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
         """
         <!DOCTYPE html>
         <html>
@@ -1288,7 +1296,7 @@ fun LeafletMapView(
                 });
                 
                 var homeMarker = L.marker([homeLat, homeLng], {icon: homeIcon}).addTo(map);
-                homeMarker.bindPopup("<b>Home Location</b><br>${address.replace("'", "\\'")}").openPopup();
+                homeMarker.bindPopup("<b>Home Location</b><br>${escapedAddress}").openPopup();
                 
                 var helperIconHtml = '<div id="helper-marker-icon" style="background-color: #22C55E; border: 2px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/></svg></div>';
                 
@@ -1334,21 +1342,23 @@ fun LeafletMapView(
         """.trimIndent()
     }
 
-    AndroidView(
-        factory = { ctx ->
-            android.webkit.WebView(ctx).apply {
-                webViewClient = android.webkit.WebViewClient()
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                loadDataWithBaseURL("https://openstreetmap.org", htmlContent, "text/html", "UTF-8", null)
-            }
-        },
-        update = { webView ->
-            val script = "if(typeof updateHelperPosition === 'function') { updateHelperPosition($progress, $isBackup); }"
-            webView.evaluateJavascript(script, null)
-        },
-        modifier = modifier
-    )
+    androidx.compose.runtime.key(address) {
+        AndroidView(
+            factory = { ctx ->
+                android.webkit.WebView(ctx).apply {
+                    webViewClient = android.webkit.WebViewClient()
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    loadDataWithBaseURL("https://openstreetmap.org", htmlContent, "text/html", "UTF-8", null)
+                }
+            },
+            update = { webView ->
+                val script = "if(typeof updateHelperPosition === 'function') { updateHelperPosition($progress, $isBackup); }"
+                webView.evaluateJavascript(script, null)
+            },
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
