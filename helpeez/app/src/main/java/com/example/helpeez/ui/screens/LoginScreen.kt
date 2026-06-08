@@ -362,9 +362,8 @@ fun LoginScreen(
 
                             isLoading = true
 
-                            val sharedPrefs = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
-                            val syncEnabled = sharedPrefs.getBoolean("sync_enabled", false)
-                            val syncUrl = sharedPrefs.getString("sync_url", "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
+                            val syncEnabled = true
+                            val syncUrl = "https://helpeez-database.onrender.com"
 
                             if (isLoginMode) {
                                 // Login Flow
