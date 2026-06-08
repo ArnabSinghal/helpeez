@@ -438,94 +438,40 @@ fun HomeScreen(
                                     Text(assignedHelperPhone, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BluePrimary)
                                 }
 
-                                Spacer(modifier = Modifier.height(12.dp))
-                                HorizontalDivider(color = Color(0xFFF1F5F9))
-
                                 if (isHolidayReplacement) {
-                                     Spacer(modifier = Modifier.height(12.dp))
-                                     HorizontalDivider(color = Color(0xFFF1F5F9))
-                                     Spacer(modifier = Modifier.height(10.dp))
-                                     Card(
-                                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)),
-                                         border = BorderStroke(1.dp, Color(0xFFFFEDD5)),
-                                         shape = RoundedCornerShape(8.dp),
-                                         modifier = Modifier.fillMaxWidth()
-                                     ) {
-                                         Row(
-                                             modifier = Modifier.padding(10.dp),
-                                             verticalAlignment = Alignment.CenterVertically
-                                         ) {
-                                             Icon(
-                                                 imageVector = Icons.Default.Warning,
-                                                 contentDescription = null,
-                                                 tint = Color(0xFFEA580C),
-                                                 modifier = Modifier.size(16.dp)
-                                             )
-                                             Spacer(modifier = Modifier.width(8.dp))
-                                             var regularHelperName by remember { mutableStateOf("Regular Helper") }
-                                             LaunchedEffect(activeHome.regularHelperId) {
-                                                 val h = dbHelper.getUserById(activeHome.regularHelperId)
-                                                 if (h != null) regularHelperName = h.name
-                                             }
-                                             Text(
-                                                 text = "Note: Your regular helper $regularHelperName is on leave. Substitute helper $assignedHelperName has been assigned to complete your house cleaning session today.",
-                                                 fontSize = 11.sp,
-                                                 color = Color(0xFFC2410C),
-                                                 lineHeight = 15.sp
-                                             )
-                                         }
-                                     }
-                                 }
-                                 Spacer(modifier = Modifier.height(8.dp))
-
-                                TextButton(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            if (!isHolidayReplacement) {
-                                                val allHelpers = dbHelper.getAllHelpers()
-                                                val regularHelper = dbHelper.getUserById(activeHome.assignedHelperId)
-                                                val filterHelpers = allHelpers.filter { it.id != activeHome.assignedHelperId }
-                                                if (filterHelpers.isNotEmpty()) {
-                                                    val substitute = filterHelpers.random()
-                                                    context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
-                                                        .edit()
-                                                        .putInt("regular_helper_id_${activeHome.id}", activeHome.assignedHelperId)
-                                                        .apply()
-                                                    
-                                                    if (syncEnabled) {
-                                                        NetworkClient.updateHomeHelperSync(syncUrl, activeHome.id, substitute.id)
-                                                    } else {
-                                                        dbHelper.updateHomeHelper(activeHome.id, substitute.id)
-                                                    }
-                                                    homesList = if (syncEnabled) NetworkClient.fetchHomes(syncUrl, userId) else dbHelper.getHomesForUser(userId)
-                                                    isHolidayReplacement = true
-                                                    android.widget.Toast.makeText(context, "Regular helper ${regularHelper?.name} is on holiday. Substitute ${substitute.name} assigned!", android.widget.Toast.LENGTH_LONG).show()
-                                                }
-                                            } else {
-                                                val regularHelperId = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
-                                                    .getInt("regular_helper_id_${activeHome.id}", -1)
-                                                if (regularHelperId != -1) {
-                                                    if (syncEnabled) {
-                                                        NetworkClient.updateHomeHelperSync(syncUrl, activeHome.id, regularHelperId)
-                                                    } else {
-                                                        dbHelper.updateHomeHelper(activeHome.id, regularHelperId)
-                                                    }
-                                                    homesList = if (syncEnabled) NetworkClient.fetchHomes(syncUrl, userId) else dbHelper.getHomesForUser(userId)
-                                                    isHolidayReplacement = false
-                                                    android.widget.Toast.makeText(context, "Regular helper restored.", android.widget.Toast.LENGTH_SHORT).show()
-                                                }
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Card(
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)),
+                                        border = BorderStroke(1.dp, Color(0xFFFFEDD5)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = Color(0xFFEA580C),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            var regularHelperName by remember { mutableStateOf("Regular Helper") }
+                                            LaunchedEffect(activeHome.regularHelperId) {
+                                                val h = dbHelper.getUserById(activeHome.regularHelperId)
+                                                if (h != null) regularHelperName = h.name
                                             }
+                                            Text(
+                                                text = "Note: Your regular helper $regularHelperName is on leave. Substitute helper $assignedHelperName has been assigned to complete your house cleaning session today.",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFFC2410C),
+                                                lineHeight = 15.sp
+                                            )
                                         }
-                                    },
-                                    modifier = Modifier.align(Alignment.End),
-                                    contentPadding = PaddingValues(0.dp)
-                                ) {
-                                    Text(
-                                        text = if (isHolidayReplacement) "Mark Regular Helper Active" else "Mark Helper on Holiday (Get Substitute)",
-                                        fontSize = 11.sp,
-                                        color = if (isHolidayReplacement) Color(0xFF22C55E) else Color(0xFFEF4444),
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    }
                                 }
                             }
                         }
@@ -1043,7 +989,7 @@ fun HomeScreen(
                                                     onClick = {
                                                         coroutineScope.launch {
                                                             val allHelpers = dbHelper.getAllHelpers()
-                                                            val filterHelpers = allHelpers.filter { it.id != userId }
+                                                            val filterHelpers = allHelpers.filter { it.id != userId && it.email.trim().lowercase() != currentUserProfile?.email?.trim()?.lowercase() }
                                                             if (filterHelpers.isNotEmpty()) {
                                                                 val substitute = filterHelpers.random()
                                                                 if (syncEnabled) {

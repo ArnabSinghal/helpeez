@@ -163,9 +163,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Register a new user
-    fun registerUser(email: String, name: String, phone: String, passwordPlain: String, role: String = "owner"): Boolean {
+    fun registerUser(email: String, name: String, phone: String, passwordPlain: String, role: String = "owner", id: Int = -1): Boolean {
         val db = this.writableDatabase
         val values = ContentValues().apply {
+            if (id != -1) {
+                put(KEY_ID, id)
+            }
             put(KEY_USER_EMAIL, email.trim().lowercase())
             put(KEY_USER_NAME, name.trim())
             put(KEY_USER_PHONE, phone.trim())
@@ -173,7 +176,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(KEY_USER_PASSWORD, hashPassword(passwordPlain))
         }
 
-        val result = db.insert(TABLE_USERS, null, values)
+        val result = db.insertWithOnConflict(TABLE_USERS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
         db.close()
         return result != -1L
     }

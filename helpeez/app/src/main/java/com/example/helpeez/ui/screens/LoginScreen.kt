@@ -371,7 +371,7 @@ fun LoginScreen(
                                     val user = NetworkClient.login(syncUrl, email, password)
                                     if (user != null) {
                                         // Cache locally for offline fallback
-                                        dbHelper.registerUser(user.email, user.name, user.phone, password, user.role)
+                                        dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
                                         isLoading = false
                                         onLoginSuccess(user.id, user.role)
                                     } else {
@@ -395,7 +395,7 @@ fun LoginScreen(
                                         val user = NetworkClient.login(syncUrl, email, password)
                                         isLoading = false
                                         if (user != null) {
-                                            dbHelper.registerUser(user.email, user.name, user.phone, password, user.role)
+                                            dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
                                             onLoginSuccess(user.id, user.role)
                                         } else {
                                             errorMessage = "Signup succeeded but login failed."
