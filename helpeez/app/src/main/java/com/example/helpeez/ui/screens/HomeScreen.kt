@@ -181,7 +181,7 @@ fun HomeScreen(
     }
 
     // Auto-Transition Shift status to completed when timer runs down
-    if (activeHome != null && activeHome.shiftStatus == "started") {
+    if (activeHome != null && activeHome.shiftStatus == "started" && activeHome.checkInTime > 0L) {
         val shiftDurationSeconds = activeHome.dailyCleaningDuration * 60L
         val elapsedTimeSeconds = (currentTime - activeHome.checkInTime) / 1000
         val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
@@ -596,23 +596,6 @@ fun HomeScreen(
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
-                                    
-                                    Button(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                if (syncEnabled) {
-                                                    NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "pending", 0L)
-                                                } else {
-                                                    dbHelper.updateHomeShiftStatus(activeHome.id, "pending", 0L)
-                                                }
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.padding(top = 12.dp)
-                                    ) {
-                                        Text("Re-schedule Session", color = Color.White)
-                                    }
                                 }
                             }
                         } else {
@@ -1298,7 +1281,7 @@ fun LeafletMapView(
                 }).addTo(map);
                 
                 var homeIcon = L.divIcon({
-                    html: '<div style="background-color: #0284C7; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>',
+                    html: '<div style="background-color: #0EA5E9; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>',
                     className: '',
                     iconSize: [24, 24],
                     iconAnchor: [12, 12]
@@ -1334,7 +1317,7 @@ fun LeafletMapView(
                         map.removeLayer(routeLine);
                     }
                     routeLine = L.polyline([[currentLat, currentLng], [homeLat, homeLng]], {
-                        color: isBackup ? '#EF4444' : '#0284C7',
+                        color: isBackup ? '#EF4444' : '#38BDF8',
                         weight: 4,
                         dashArray: '5, 10'
                     }).addTo(map);
@@ -1342,6 +1325,9 @@ fun LeafletMapView(
                     var group = new L.featureGroup([homeMarker, helperMarker]);
                     map.fitBounds(group.getBounds().pad(0.15));
                 };
+                
+                // Run initially
+                updateHelperPosition($progress, $isBackup);
             </script>
         </body>
         </html>
