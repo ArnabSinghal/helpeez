@@ -484,7 +484,7 @@ fun HomeScreen(
                         if (activeHome.shiftStatus == "started") {
                             // ACTIVE WORK SESSION: Show Circular countdown Timer & Shift Extension Controls
                             val shiftDurationSeconds = activeHome.dailyCleaningDuration * 60L
-                            val elapsedTimeSeconds = (currentTime - activeHome.checkInTime) / 1000
+                            val elapsedTimeSeconds = if (activeHome.checkInTime > 0L) (currentTime - activeHome.checkInTime) / 1000 else 0L
                             val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
 
                             Card(
@@ -1005,7 +1005,7 @@ fun HomeScreen(
                                 } else if (job.shiftStatus == "started") {
                                     // ACTIVE SHIFT: Live Circle countdown and Bilingual Checklists
                                     val shiftDurationSeconds = job.dailyCleaningDuration * 60L
-                                    val elapsedTimeSeconds = (currentTime - job.checkInTime) / 1000
+                                    val elapsedTimeSeconds = if (job.checkInTime > 0L) (currentTime - job.checkInTime) / 1000 else 0L
                                     val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
 
                                     Card(
@@ -1198,7 +1198,7 @@ fun CircularShiftTimer(
 
     val minutes = remainingSeconds / 60
     val seconds = remainingSeconds % 60
-    val timeText = String.format("%02d:%02d", minutes, seconds)
+    val timeText = String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
 
     Box(
         modifier = modifier.size(160.dp),
