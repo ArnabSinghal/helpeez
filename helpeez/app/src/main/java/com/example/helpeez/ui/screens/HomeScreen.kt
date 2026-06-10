@@ -267,6 +267,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp)
+                        .animateContentSize()
                         .verticalScroll(rememberScrollState())
                 ) {
                     // Multi-home switcher cards
@@ -497,178 +498,193 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // Active State Tracker
-                        if (activeHome.shiftStatus == "started") {
-                            // ACTIVE WORK SESSION: Show Circular countdown Timer & Shift Extension Controls
-                            val shiftDurationSeconds = activeHome.dailyCleaningDuration * 60L
-                            val elapsedTimeSeconds = if (activeHome.checkInTime > 0L) (currentTime - activeHome.checkInTime) / 1000 else 0L
-                            val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
+                        // Active State Tracker (Animated transitions)
+                        AnimatedContent(
+                            targetState = activeHome.shiftStatus,
+                            transitionSpec = {
+                                fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(300))
+                            },
+                            label = "ShiftStatusTransition"
+                        ) { status ->
+                            when (status) {
+                                "started" -> {
+                                    // ACTIVE WORK SESSION: Show Circular countdown Timer & Shift Extension Controls
+                                    val shiftDurationSeconds = activeHome.dailyCleaningDuration * 60L
+                                    val elapsedTimeSeconds = if (activeHome.checkInTime > 0L) (currentTime - activeHome.checkInTime) / 1000 else 0L
+                                    val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
 
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "Active Cleaning Session",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = Color(0xFF1E293B)
-                                    )
-                                    Text(
-                                        text = "Helper is working in your house. Extend the work session or complete early below.",
-                                        fontSize = 10.sp,
-                                        color = TextMuted,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
-                                    )
-
-                                    CircularShiftTimer(
-                                        remainingSeconds = remainingSeconds,
-                                        totalSeconds = shiftDurationSeconds
-                                    )
-                                    
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                                     ) {
-                                        Button(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    // Extend session by 15 mins (900,000 ms) in checkInTime
-                                                    val extendedCheckIn = activeHome.checkInTime + 900000L
-                                                    if (syncEnabled) {
-                                                        NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "started", extendedCheckIn)
-                                                    } else {
-                                                        dbHelper.updateHomeShiftStatus(activeHome.id, "started", extendedCheckIn)
-                                                    }
-                                                    android.widget.Toast.makeText(context, "Session extended by 15 mins (+₹200 added to invoice)", android.widget.Toast.LENGTH_SHORT).show()
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.weight(1f),
-                                            contentPadding = PaddingValues(0.dp)
+                                        Column(
+                                            modifier = Modifier.padding(20.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Text("Extend 15 mins", fontSize = 11.sp, color = Color.White)
-                                        }
+                                            Text(
+                                                text = "Active Cleaning Session",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = Color(0xFF1E293B)
+                                            )
+                                            Text(
+                                                text = "Helper is working in your house. Extend the work session or complete early below.",
+                                                fontSize = 10.sp,
+                                                color = TextMuted,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                                            )
 
-                                        Button(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    // End session early
-                                                    if (syncEnabled) {
-                                                        NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
-                                                    } else {
-                                                        dbHelper.updateHomeShiftStatus(activeHome.id, "completed", activeHome.checkInTime)
-                                                    }
-                                                    android.widget.Toast.makeText(context, "Work session completed early.", android.widget.Toast.LENGTH_SHORT).show()
+                                            CircularShiftTimer(
+                                                remainingSeconds = remainingSeconds,
+                                                totalSeconds = shiftDurationSeconds
+                                            )
+
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Button(
+                                                    onClick = {
+                                                        coroutineScope.launch {
+                                                            // Extend session by 15 mins (900,000 ms) in checkInTime
+                                                            val extendedCheckIn = activeHome.checkInTime + 900000L
+                                                            if (syncEnabled) {
+                                                                NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "started", extendedCheckIn)
+                                                            } else {
+                                                                dbHelper.updateHomeShiftStatus(activeHome.id, "started", extendedCheckIn)
+                                                            }
+                                                            android.widget.Toast.makeText(context, "Session extended by 15 mins (+₹200 added to invoice)", android.widget.Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    modifier = Modifier.weight(1f),
+                                                    contentPadding = PaddingValues(0.dp)
+                                                ) {
+                                                    Text("Extend 15 mins", fontSize = 11.sp, color = Color.White)
                                                 }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.weight(1f),
-                                            contentPadding = PaddingValues(0.dp)
-                                        ) {
-                                            Text("End Session Early", fontSize = 11.sp, color = Color.White)
+
+                                                Button(
+                                                    onClick = {
+                                                        coroutineScope.launch {
+                                                            // End session early
+                                                            if (syncEnabled) {
+                                                                NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
+                                                            } else {
+                                                                dbHelper.updateHomeShiftStatus(activeHome.id, "completed", activeHome.checkInTime)
+                                                            }
+                                                            android.widget.Toast.makeText(context, "Work session completed early.", android.widget.Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    modifier = Modifier.weight(1f),
+                                                    contentPadding = PaddingValues(0.dp)
+                                                ) {
+                                                    Text("End Session Early", fontSize = 11.sp, color = Color.White)
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        } else if (activeHome.shiftStatus == "completed") {
-                            // COMPLETED WORK SESSION: Show completion details
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
-                                border = BorderStroke(1.dp, Color(0xFFBBF7D0))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(54.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF22C55E)),
-                                        contentAlignment = Alignment.Center
+                                "completed" -> {
+                                    // COMPLETED WORK SESSION: Show completion details
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                                        border = BorderStroke(1.dp, Color(0xFFBBF7D0))
                                     ) {
-                                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                                        Column(
+                                            modifier = Modifier.padding(20.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(54.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF22C55E)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                                            }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = "Cleaning Session Complete!",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 16.sp,
+                                                color = Color(0xFF166534)
+                                            )
+                                            Text(
+                                                text = "Today's work shift has been logged. Daily checklist tasks completed successfully.",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF166534).copy(alpha = 0.8f),
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.padding(vertical = 4.dp)
+                                            )
+                                        }
                                     }
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text(
-                                        text = "Cleaning Session Complete!",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = Color(0xFF166534)
-                                    )
-                                    Text(
-                                        text = "Today's work shift has been logged. Daily checklist tasks completed successfully.",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF166534).copy(alpha = 0.8f),
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(vertical = 4.dp)
-                                    )
                                 }
-                            }
-                        } else {
-                            // PENDING WORK SESSION: Show Live Route Map and Random OTP Card
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(240.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize()) {
-                                    LeafletMapView(
-                                        address = activeHome.address,
-                                        progress = helperProgress,
-                                        isBackup = isHolidayReplacement,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                            }
+                                else -> {
+                                    // PENDING WORK SESSION: Show Live Route Map and Random OTP Card
+                                    Column {
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(240.dp),
+                                            shape = RoundedCornerShape(16.dp),
+                                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                        ) {
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                LeafletMapView(
+                                                    address = activeHome.address,
+                                                    progress = helperProgress,
+                                                    isBackup = isHolidayReplacement,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                            }
+                                        }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(16.dp))
 
-                            // Random OTP Card
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "Session Check-in Code (OTP)",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = BluePrimary
-                                    )
-                                    Text(
-                                        text = "Give this randomized security code to helper Aarti Sharma when she arrives to verify work session start.",
-                                        fontSize = 11.sp,
-                                        color = TextMuted,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(vertical = 6.dp)
-                                    )
-                                    Text(
-                                        text = activeHome.otp,
-                                        fontSize = 32.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = BluePrimary,
-                                        letterSpacing = 8.sp,
-                                        modifier = Modifier.padding(vertical = 8.dp)
-                                    )
+                                        // Random OTP Card
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    text = "Session Check-in Code (OTP)",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp,
+                                                    color = BluePrimary
+                                                )
+                                                Text(
+                                                    text = "Give this randomized security code to helper Aarti Sharma when she arrives to verify work session start.",
+                                                    fontSize = 11.sp,
+                                                    color = TextMuted,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.padding(vertical = 6.dp)
+                                                )
+                                                Text(
+                                                    text = activeHome.otp,
+                                                    fontSize = 32.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = BluePrimary,
+                                                    letterSpacing = 8.sp,
+                                                    modifier = Modifier.padding(vertical = 8.dp)
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -682,6 +698,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp)
+                        .animateContentSize()
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (!dayShiftStarted) {
@@ -1213,7 +1230,12 @@ fun CircularShiftTimer(
     modifier: Modifier = Modifier
 ) {
     val progress = if (totalSeconds > 0) remainingSeconds.toFloat() / totalSeconds.toFloat() else 0f
-    val sweepAngle = 360f * progress
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing),
+        label = "SweepAngleAnim"
+    )
+    val sweepAngle = 360f * animatedProgress
 
     val minutes = remainingSeconds / 60
     val seconds = remainingSeconds % 60

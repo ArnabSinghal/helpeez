@@ -70,6 +70,11 @@ header {
   font-weight: 700;
   font-size: 1.5rem;
   box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.logo-icon:hover {
+  transform: rotate(12deg) scale(1.1);
 }
 
 .logo-text {
@@ -112,13 +117,14 @@ header {
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
 }
 
 .btn-cta:hover {
   background: var(--primary-dark);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.35);
 }
 
 /* Layout Grids */
@@ -179,11 +185,21 @@ header {
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .panel:hover {
+  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
+}
+
+#pricing-panel {
+  animation-delay: 0.1s;
+}
+
+#dashboard-panel {
+  animation-delay: 0.2s;
 }
 
 .panel-title {
@@ -216,19 +232,22 @@ header {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   background: white;
 }
 
 .chore-card:hover {
   border-color: var(--primary);
   background: var(--primary-light);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.08);
 }
 
 .chore-card.active {
   border-color: var(--primary);
   background: var(--primary-light);
   box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.08);
+  transform: scale(1.01);
 }
 
 .chore-info {
@@ -624,6 +643,17 @@ header {
   padding: 1.5rem;
   border-radius: var(--radius-md);
   text-align: center;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.feature-card:nth-child(1) { animation-delay: 0.3s; }
+.feature-card:nth-child(2) { animation-delay: 0.4s; }
+.feature-card:nth-child(3) { animation-delay: 0.5s; }
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
 }
 
 .feature-icon-wrapper {
@@ -648,4 +678,15 @@ header {
 .feature-card p {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
