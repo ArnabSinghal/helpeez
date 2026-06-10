@@ -53,6 +53,22 @@ fun HomeScreen(
     val dbHelper = remember { DatabaseHelper(context) }
     val coroutineScope = rememberCoroutineScope()
 
+    // Initialize TextToSpeech engine for real-time voice assistance
+    var tts by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
+    DisposableEffect(context) {
+        var ttsInstance: android.speech.tts.TextToSpeech? = null
+        ttsInstance = android.speech.tts.TextToSpeech(context) { status ->
+            if (status == android.speech.tts.TextToSpeech.SUCCESS) {
+                ttsInstance?.setLanguage(java.util.Locale("hi", "IN"))
+            }
+        }
+        tts = ttsInstance
+        onDispose {
+            ttsInstance.stop()
+            ttsInstance.shutdown()
+        }
+    }
+
 
 
     // Shared Settings State (Hardcoded online backend database url)
@@ -931,6 +947,7 @@ fun HomeScreen(
                                     HelperBilingualScreen(
                                         helper = mockHelper,
                                         correctOtp = job.otp,
+                                        tts = tts,
                                         tasks = listOf(
                                             "Sweep & mop living room" to job.sweepingSelected,
                                             "Sweep & mop 2 bedrooms" to (job.rooms >= 2),
@@ -1083,9 +1100,11 @@ fun HomeScreen(
                                                         }
                                                         IconButton(
                                                             onClick = {
+                                                                val text = translationMap[taskText] ?: "सफाई काम"
+                                                                tts?.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, null)
                                                                 android.widget.Toast.makeText(
                                                                     context,
-                                                                    "🔊 बोल रहे हैं: ${translationMap[taskText]}",
+                                                                    "🔊 बोल रहे हैं: $text",
                                                                     android.widget.Toast.LENGTH_SHORT
                                                                 ).show()
                                                             }
@@ -1367,6 +1386,7 @@ fun HelperBilingualScreen(
     correctOtp: String,
     tasks: List<Pair<String, Boolean>>,
     onVerifyOTP: () -> Unit,
+    tts: android.speech.tts.TextToSpeech?,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -1531,6 +1551,7 @@ fun HelperBilingualScreen(
                             IconButton(
                                 onClick = {
                                     playingTaskIndex = index
+                                    tts?.speak(hindiTranslation, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, null)
                                     android.widget.Toast.makeText(
                                         context,
                                         "🔊 पढ़ रहे हैं: $hindiTranslation",

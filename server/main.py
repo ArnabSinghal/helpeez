@@ -7,9 +7,15 @@ from typing import List, Optional
 app = FastAPI(title="Helpeez Cloud Sync Backend", version="1.0")
 DB_FILE = "server.db"
 
+# Database connection helper with WAL mode & busy timeout
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE, timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
+
 # Database initialization
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -132,7 +138,7 @@ class ShiftStatusUpdate(BaseModel):
 # Endpoints
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user: UserRegister):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
@@ -151,7 +157,7 @@ def register(user: UserRegister):
 
 @app.post("/login", response_model=UserResponse)
 def login(credentials: UserLogin):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, email, name, phone, role FROM users WHERE email = ? AND password_hash = ?",
@@ -176,7 +182,7 @@ def login(credentials: UserLogin):
 
 @app.post("/homes", status_code=status.HTTP_201_CREATED)
 def add_home(home: HomeSchema):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Auto-assign random helper if -1
@@ -224,7 +230,7 @@ def auto_complete_expired_shifts(cursor):
 
 @app.get("/homes", response_model=List[HomeSchema])
 def get_homes(user_id: Optional[int] = None, helper_id: Optional[int] = None):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     auto_complete_expired_shifts(cursor)
     conn.commit()
@@ -275,7 +281,7 @@ def get_homes(user_id: Optional[int] = None, helper_id: Optional[int] = None):
 
 @app.post("/homes/shift-status")
 def update_shift_status(payload: ShiftStatusUpdate):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         UPDATE homes 
@@ -302,7 +308,7 @@ class HelperUpdate(BaseModel):
 
 @app.post("/homes/update-helper")
 def update_home_helper(payload: HelperUpdate):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("UPDATE homes SET assigned_helper_id = ? WHERE id = ?", (payload.helper_id, payload.home_id))
     conn.commit()
@@ -319,7 +325,7 @@ class HolidayUpdate(BaseModel):
 
 @app.post("/homes/update-holiday")
 def update_holiday(payload: HolidayUpdate):
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         UPDATE homes 
