@@ -464,7 +464,7 @@ header {
 /* Simulation Panel */
 .sim-console {
   background: #0f172a;
-  color: #f8fafc;
+  color: #ffffff;
   border-radius: var(--radius-md);
   padding: 1.5rem;
   margin-top: 1.5rem;
@@ -473,7 +473,7 @@ header {
 
 .sim-console h4 {
   font-size: 1rem;
-  color: #38bdf8;
+  color: #ffffff;
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -518,7 +518,7 @@ header {
   border-radius: var(--radius-sm);
   font-family: monospace;
   font-size: 0.75rem;
-  color: #a7f3d0;
+  color: #ffffff;
   height: 60px;
   overflow-y: auto;
   border: 1px solid #1e293b;
