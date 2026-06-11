@@ -460,6 +460,17 @@ fun HomeScreen(
                                     Text(assignedHelperPhone, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BluePrimary)
                                 }
 
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Scheduled Arrival:", fontSize = 11.sp, color = TextMuted)
+                                    Text(activeHome.timingSlot, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF166534))
+                                }
+
                                 if (isHolidayReplacement) {
                                     Spacer(modifier = Modifier.height(12.dp))
                                     HorizontalDivider(color = Color(0xFFF1F5F9))
@@ -643,21 +654,64 @@ fun HomeScreen(
                                         Card(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(240.dp),
+                                                .padding(bottom = 16.dp),
                                             shape = RoundedCornerShape(16.dp),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                                         ) {
-                                            Box(modifier = Modifier.fillMaxSize()) {
-                                                LeafletMapView(
-                                                    address = activeHome.address,
-                                                    progress = helperProgress,
-                                                    isBackup = isHolidayReplacement,
-                                                    modifier = Modifier.fillMaxSize()
+                                            Column(modifier = Modifier.padding(20.dp)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = "Helper Transit Status",
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 15.sp,
+                                                        color = Color(0xFF0F172A)
+                                                    )
+                                                    Text(
+                                                        text = "Estimated: 5 mins",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = BluePrimary,
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(4.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Text(
+                                                    text = "Scheduled Arrival: ${activeHome.timingSlot}",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = Color(0xFF475569)
                                                 )
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                                
+                                                // Progress indicator bar
+                                                LinearProgressIndicator(
+                                                    progress = { helperProgress },
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(8.dp)
+                                                        .clip(RoundedCornerShape(4.dp)),
+                                                    color = BluePrimary,
+                                                    trackColor = Color(0xFFE2E8F0),
+                                                )
+                                                
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text("Matched", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.SemiBold)
+                                                    Text("En Route", fontSize = 10.sp, color = BluePrimary, fontWeight = FontWeight.Bold)
+                                                    Text("Arrived", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.SemiBold)
+                                                }
                                             }
                                         }
-
-                                        Spacer(modifier = Modifier.height(16.dp))
 
                                         // Random OTP Card
                                         Card(
@@ -677,7 +731,7 @@ fun HomeScreen(
                                                     color = BluePrimary
                                                 )
                                                 Text(
-                                                    text = "Give this randomized security code to helper Aarti Sharma when she arrives to verify work session start.",
+                                                    text = "Give this randomized security code to helper $assignedHelperName when she arrives to verify work session start.",
                                                     fontSize = 11.sp,
                                                     color = TextMuted,
                                                     textAlign = TextAlign.Center,
@@ -975,7 +1029,7 @@ fun HomeScreen(
                                         tts = tts,
                                         tasks = listOf(
                                             "Sweep & mop living room" to job.sweepingSelected,
-                                            "Sweep & mop 2 bedrooms" to (job.rooms >= 2),
+                                            "Sweep & mop 2 bedrooms" to (job.rooms >= 2 && job.sweepingSelected),
                                             "Wash kitchen dishes" to job.utensilsSelected,
                                             "Mop balcony floor" to job.specialBalcony,
                                             "Wash garbage bins" to job.specialDustbin
@@ -1089,7 +1143,7 @@ fun HomeScreen(
                                     
                                     val listTasks = listOf(
                                         "Sweep & mop living room" to job.sweepingSelected,
-                                        "Sweep & mop 2 bedrooms" to (job.rooms >= 2),
+                                        "Sweep & mop 2 bedrooms" to (job.rooms >= 2 && job.sweepingSelected),
                                         "Wash kitchen dishes" to job.utensilsSelected,
                                         "Mop balcony floor" to job.specialBalcony,
                                         "Wash garbage bins" to job.specialDustbin
@@ -1097,7 +1151,7 @@ fun HomeScreen(
 
                                     val translationMap = mapOf(
                                         "Sweep & mop living room" to "लिविंग रूम में झाड़ू और पोछा लगाना",
-                                        "Sweep & mop 2 bedrooms" to "कमरे में झाड़ू और पोछा लगाना",
+                                        "Sweep & mop 2 bedrooms" to "कमरे की सफाई करना",
                                         "Wash kitchen dishes" to "रसोई के बर्तन साफ करना",
                                         "Mop balcony floor" to "बालकनी के फर्श पर पोछा लगाना",
                                         "Wash garbage bins" to "कचरे के डिब्बे साफ करना"
@@ -1307,119 +1361,6 @@ fun CircularShiftTimer(
 }
 
 @Composable
-fun LeafletMapView(
-    address: String,
-    progress: Float,
-    isBackup: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val htmlContent = remember(address) {
-        val escapedAddress = address
-            .replace("\\", "\\\\")
-            .replace("'", "\\'")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-        """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-            <style>
-                body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #F8FAFC; }
-            </style>
-        </head>
-        <body>
-            <div id="map"></div>
-            <script>
-                var homeLat = 12.9716;
-                var homeLng = 77.5946;
-                var startLat = 12.9820;
-                var startLng = 77.6080;
-                
-                var map = L.map('map', { zoomControl: false }).setView([homeLat, homeLng], 14);
-                
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 18,
-                    attribution: ''
-                }).addTo(map);
-                
-                var homeIcon = L.divIcon({
-                    html: '<div style="background-color: #0EA5E9; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>',
-                    className: '',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                });
-                
-                var homeMarker = L.marker([homeLat, homeLng], {icon: homeIcon}).addTo(map);
-                homeMarker.bindPopup("<b>Home Location</b><br>${escapedAddress}").openPopup();
-                
-                var helperIconHtml = '<div id="helper-marker-icon" style="background-color: #22C55E; border: 2px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/></svg></div>';
-                
-                var helperIcon = L.divIcon({
-                    html: helperIconHtml,
-                    className: '',
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 14]
-                });
-                
-                var helperMarker = L.marker([startLat, startLng], {icon: helperIcon}).addTo(map);
-                var routeLine = null;
-
-                window.updateHelperPosition = function(progress, isBackup) {
-                    var el = document.getElementById('helper-marker-icon');
-                    if (el) {
-                        el.style.backgroundColor = isBackup ? '#EF4444' : '#22C55E';
-                    }
-                    
-                    var currentLat = startLat + (homeLat - startLat) * progress;
-                    var currentLng = startLng + (homeLng - startLng) * progress;
-                    
-                    helperMarker.setLatLng([currentLat, currentLng]);
-                    
-                    if (routeLine) {
-                        map.removeLayer(routeLine);
-                    }
-                    routeLine = L.polyline([[currentLat, currentLng], [homeLat, homeLng]], {
-                        color: isBackup ? '#EF4444' : '#38BDF8',
-                        weight: 4,
-                        dashArray: '5, 10'
-                    }).addTo(map);
-                    
-                    var group = new L.featureGroup([homeMarker, helperMarker]);
-                    map.fitBounds(group.getBounds().pad(0.15));
-                };
-                
-                // Run initially
-                updateHelperPosition($progress, $isBackup);
-            </script>
-        </body>
-        </html>
-        """.trimIndent()
-    }
-
-    androidx.compose.runtime.key(address) {
-        AndroidView(
-            factory = { ctx ->
-                android.webkit.WebView(ctx).apply {
-                    webViewClient = android.webkit.WebViewClient()
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    loadDataWithBaseURL("https://openstreetmap.org", htmlContent, "text/html", "UTF-8", null)
-                }
-            },
-            update = { webView ->
-                val script = "if(typeof updateHelperPosition === 'function') { updateHelperPosition($progress, $isBackup); }"
-                webView.evaluateJavascript(script, null)
-            },
-            modifier = modifier
-        )
-    }
-}
-
-@Composable
 fun HelperBilingualScreen(
     helper: HelperProfile,
     correctOtp: String,
@@ -1436,11 +1377,11 @@ fun HelperBilingualScreen(
 
     // Helper translation map
     val translationMap = mapOf(
-        "Sweep & mop living room" to "लिविंग रूम में झाड़ू और पोछा लगाना (झाड़ू और पोछा)",
-        "Sweep & mop 2 bedrooms" to "2 बेडरूम में झाड़ू और पोछा लगाना (झाड़ू और पोछा)",
-        "Wash kitchen dishes" to "रसोई के बर्तन साफ करना (बर्तन धोना)",
-        "Mop balcony floor" to "बालकनी के फर्श पर पोछा लगाना (पोछा)",
-        "Wash garbage bins" to "कचरे के डिब्बे साफ करना (डस्टबिन)"
+        "Sweep & mop living room" to "लिविंग रूम में झाड़ू और पोछा लगाना",
+        "Sweep & mop 2 bedrooms" to "2 बेडरूम की सफाई करना",
+        "Wash kitchen dishes" to "रसोई के बर्तन साफ करना",
+        "Mop balcony floor" to "बालकनी के फर्श पर पोछा लगाना",
+        "Wash garbage bins" to "कचरे के डिब्बे साफ करना"
     )
 
     Column(
@@ -1449,56 +1390,6 @@ fun HelperBilingualScreen(
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Welcome Header (Bilingual)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = BluePrimary)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "नमस्ते, ${helper.name}!",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    text = "Hello, ${helper.name}!",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Voice guidance badge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Voice help",
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "🔊 आवाज सहायता चालू है",
-                        fontSize = 12.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Tasks Header
         Row(
             modifier = Modifier.fillMaxWidth(),
