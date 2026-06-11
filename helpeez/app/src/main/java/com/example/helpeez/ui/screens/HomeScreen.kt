@@ -72,7 +72,7 @@ fun HomeScreen(
 
 
     // Shared Settings State (Hardcoded online backend database url)
-    val syncEnabled = true
+    var syncEnabled by remember { mutableStateOf(true) }
     val syncUrl = "https://helpeez-database.onrender.com"
 
     // User Profile
@@ -98,6 +98,7 @@ fun HomeScreen(
     LaunchedEffect(userId) {
         val sharedPrefs = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
         dayShiftStarted = sharedPrefs.getBoolean("helper_shift_started", false)
+        syncEnabled = sharedPrefs.getBoolean("sync_enabled", true)
 
         currentUserProfile = dbHelper.getUserById(userId)
     }
@@ -114,14 +115,14 @@ fun HomeScreen(
     }
 
     // Periodic Database & API Sync (1-second delay when active, 5-second when idle)
-    LaunchedEffect(userId, syncEnabled, syncUrl, role, homesList) {
+    LaunchedEffect(userId, syncEnabled, syncUrl, role) {
         while (true) {
             try {
                 if (role == "owner") {
-                    val remoteHomes = if (syncEnabled) NetworkClient.fetchHomes(syncUrl, userId) else emptyList()
+                    val remoteHomes = if (syncEnabled) NetworkClient.fetchHomes(syncUrl, userId) else null
                     val localHomes = dbHelper.getHomesForUser(userId)
                     
-                    if (syncEnabled) {
+                    if (syncEnabled && remoteHomes != null) {
                         homesList = remoteHomes
                         // Sync missing remote homes into local db
                         remoteHomes.forEach { rHome ->
@@ -138,10 +139,10 @@ fun HomeScreen(
                     }
                 } else {
                     // Helper View: Fetch assigned jobs
-                    val remoteJobs = if (syncEnabled) NetworkClient.fetchJobsForHelper(syncUrl, userId) else emptyList()
+                    val remoteJobs = if (syncEnabled) NetworkClient.fetchJobsForHelper(syncUrl, userId) else null
                     val localJobs = dbHelper.getJobsForHelper(userId)
                     
-                    if (syncEnabled) {
+                    if (syncEnabled && remoteJobs != null) {
                         homesList = remoteJobs
                         // Sync remote jobs to local db
                         remoteJobs.forEach { rJob ->
@@ -207,9 +208,11 @@ fun HomeScreen(
             val elapsedTimeSeconds = (currentTime - activeHome.checkInTime) / 1000
             val remainingSeconds = maxOf(0L, shiftDurationSeconds - elapsedTimeSeconds)
             if (remainingSeconds == 0L) {
+                var success = false
                 if (syncEnabled) {
-                    NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
-                } else {
+                    success = NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
+                }
+                if (!success) {
                     dbHelper.updateHomeShiftStatus(activeHome.id, "completed", activeHome.checkInTime)
                 }
             }
@@ -549,13 +552,16 @@ fun HomeScreen(
                                                 Button(
                                                     onClick = {
                                                         coroutineScope.launch {
-                                                            // Extend session by 15 mins (900,000 ms) in checkInTime
                                                             val extendedCheckIn = activeHome.checkInTime + 900000L
+                                                            var success = false
                                                             if (syncEnabled) {
-                                                                NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "started", extendedCheckIn)
-                                                            } else {
+                                                                success = NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "started", extendedCheckIn)
+                                                            }
+                                                            if (!success) {
                                                                 dbHelper.updateHomeShiftStatus(activeHome.id, "started", extendedCheckIn)
                                                             }
+                                                            val fetched = if (syncEnabled) NetworkClient.fetchHomes(syncUrl, userId) else null
+                                                            homesList = fetched ?: dbHelper.getHomesForUser(userId)
                                                             android.widget.Toast.makeText(context, "Session extended by 15 mins (+₹200 added to invoice)", android.widget.Toast.LENGTH_SHORT).show()
                                                         }
                                                     },
@@ -566,16 +572,19 @@ fun HomeScreen(
                                                 ) {
                                                     Text("Extend 15 mins", fontSize = 11.sp, color = Color.White)
                                                 }
-
+ 
                                                 Button(
                                                     onClick = {
                                                         coroutineScope.launch {
-                                                            // End session early
+                                                            var success = false
                                                             if (syncEnabled) {
-                                                                NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
-                                                            } else {
+                                                                success = NetworkClient.updateHomeShiftStatus(syncUrl, activeHome.id, "completed", activeHome.checkInTime)
+                                                            }
+                                                            if (!success) {
                                                                 dbHelper.updateHomeShiftStatus(activeHome.id, "completed", activeHome.checkInTime)
                                                             }
+                                                            val fetched = if (syncEnabled) NetworkClient.fetchHomes(syncUrl, userId) else null
+                                                            homesList = fetched ?: dbHelper.getHomesForUser(userId)
                                                             android.widget.Toast.makeText(context, "Work session completed early.", android.widget.Toast.LENGTH_SHORT).show()
                                                         }
                                                     },
@@ -897,16 +906,15 @@ fun HomeScreen(
                                         Button(
                                             onClick = {
                                                 coroutineScope.launch {
+                                                    var success = false
                                                     if (syncEnabled) {
-                                                        NetworkClient.updateHomeHolidaySync(syncUrl, job.id, userId, -1)
-                                                    } else {
+                                                        success = NetworkClient.updateHomeHolidaySync(syncUrl, job.id, userId, -1)
+                                                    }
+                                                    if (!success) {
                                                         dbHelper.updateHomeHoliday(job.id, userId, -1)
                                                     }
-                                                    homesList = if (syncEnabled) {
-                                                        NetworkClient.fetchJobsForHelper(syncUrl, userId)
-                                                    } else {
-                                                        dbHelper.getJobsForHelper(userId)
-                                                    }
+                                                    val fetched = if (syncEnabled) NetworkClient.fetchJobsForHelper(syncUrl, userId) else null
+                                                    homesList = fetched ?: dbHelper.getJobsForHelper(userId)
                                                     android.widget.Toast.makeText(context, "Resumed duty successfully!", android.widget.Toast.LENGTH_SHORT).show()
                                                 }
                                             },
@@ -975,13 +983,15 @@ fun HomeScreen(
                                         onVerifyOTP = {
                                             coroutineScope.launch {
                                                 val checkTime = System.currentTimeMillis()
+                                                var success = false
                                                 if (syncEnabled) {
-                                                    NetworkClient.updateHomeShiftStatus(syncUrl, job.id, "started", checkTime)
-                                                    homesList = NetworkClient.fetchJobsForHelper(syncUrl, userId)
-                                                } else {
-                                                    dbHelper.updateHomeShiftStatus(job.id, "started", checkTime)
-                                                    homesList = dbHelper.getJobsForHelper(userId)
+                                                    success = NetworkClient.updateHomeShiftStatus(syncUrl, job.id, "started", checkTime)
                                                 }
+                                                if (!success) {
+                                                    dbHelper.updateHomeShiftStatus(job.id, "started", checkTime)
+                                                }
+                                                val fetched = if (syncEnabled) NetworkClient.fetchJobsForHelper(syncUrl, userId) else null
+                                                homesList = fetched ?: dbHelper.getJobsForHelper(userId)
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth()
@@ -1011,16 +1021,15 @@ fun HomeScreen(
                                                             val filterHelpers = allHelpers.filter { it.id != userId && it.email.trim().lowercase() != currentUserProfile?.email?.trim()?.lowercase() }
                                                             if (filterHelpers.isNotEmpty()) {
                                                                 val substitute = filterHelpers.random()
+                                                                var success = false
                                                                 if (syncEnabled) {
-                                                                    NetworkClient.updateHomeHolidaySync(syncUrl, job.id, substitute.id, userId)
-                                                                } else {
+                                                                    success = NetworkClient.updateHomeHolidaySync(syncUrl, job.id, substitute.id, userId)
+                                                                }
+                                                                if (!success) {
                                                                     dbHelper.updateHomeHoliday(job.id, substitute.id, userId)
                                                                 }
-                                                                homesList = if (syncEnabled) {
-                                                                    NetworkClient.fetchJobsForHelper(syncUrl, userId)
-                                                                } else {
-                                                                    dbHelper.getJobsForHelper(userId)
-                                                                }
+                                                                val fetched = if (syncEnabled) NetworkClient.fetchJobsForHelper(syncUrl, userId) else null
+                                                                homesList = fetched ?: dbHelper.getJobsForHelper(userId)
                                                                 android.widget.Toast.makeText(context, "Holiday requested. substitute helper ${substitute.name} assigned!", android.widget.Toast.LENGTH_LONG).show()
                                                             } else {
                                                                 android.widget.Toast.makeText(context, "No other helpers available.", android.widget.Toast.LENGTH_SHORT).show()
@@ -1203,17 +1212,25 @@ fun HomeScreen(
             onDismiss = { showAddHomeDialog = false },
             onAddHome = { newHome ->
                 coroutineScope.launch {
-                    val isSync = true
                     val url = "https://helpeez-database.onrender.com"
-
-                    if (isSync) {
-                        val success = NetworkClient.saveHome(url, userId, newHome)
-                        if (success) {
-                            homesList = NetworkClient.fetchHomes(url, userId)
+                    var success = false
+                    if (syncEnabled) {
+                        success = NetworkClient.saveHome(url, userId, newHome)
+                    }
+                    if (success) {
+                        val fetched = NetworkClient.fetchHomes(url, userId)
+                        if (fetched != null) {
+                            homesList = fetched
+                        } else {
+                            dbHelper.insertHome(userId, newHome)
+                            homesList = dbHelper.getHomesForUser(userId)
                         }
                     } else {
                         dbHelper.insertHome(userId, newHome)
                         homesList = dbHelper.getHomesForUser(userId)
+                        if (syncEnabled) {
+                            android.widget.Toast.makeText(context, "Running in Offline mode.", android.widget.Toast.LENGTH_SHORT).show()
+                        }
                     }
                     selectedHomeIndex = homesList.size - 1
                     showAddHomeDialog = false

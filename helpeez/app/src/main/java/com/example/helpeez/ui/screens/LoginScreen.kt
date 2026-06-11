@@ -362,66 +362,74 @@ fun LoginScreen(
 
                             isLoading = true
 
-                            val syncEnabled = true
                             val syncUrl = "https://helpeez-database.onrender.com"
 
                             if (isLoginMode) {
                                 // Login Flow
-                                if (syncEnabled) {
-                                    val user = NetworkClient.login(syncUrl, email, password)
-                                    if (user != null) {
-                                        if (user.id == -1) {
-                                            isLoading = false
-                                            errorMessage = "Invalid email address or password."
-                                        } else {
-                                            // Cache locally for offline fallback
-                                            dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
-                                            isLoading = false
-                                            onLoginSuccess(user.id, user.role)
-                                        }
-                                    } else {
+                                val user = NetworkClient.login(syncUrl, email, password)
+                                if (user != null) {
+                                    if (user.id == -1) {
                                         isLoading = false
-                                        errorMessage = "API connection failed. Please verify the sync server is running at the configured URL."
+                                        errorMessage = "Invalid email address or password."
+                                    } else {
+                                        val sharedPrefs = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
+                                        sharedPrefs.edit().putBoolean("sync_enabled", true).apply()
+                                        
+                                        // Cache locally for offline fallback
+                                        dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
+                                        isLoading = false
+                                        onLoginSuccess(user.id, user.role)
                                     }
                                 } else {
-                                    val user = dbHelper.loginUser(email, password)
+                                    // Server unreachable, fallback to local DB login
+                                    val localUser = dbHelper.loginUser(email, password)
                                     isLoading = false
-                                    if (user != null) {
-                                        onLoginSuccess(user.id, user.role)
+                                    if (localUser != null) {
+                                        val sharedPrefs = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
+                                        sharedPrefs.edit().putBoolean("sync_enabled", false).apply()
+                                        
+                                        android.widget.Toast.makeText(context, "Running in Offline mode.", android.widget.Toast.LENGTH_LONG).show()
+                                        onLoginSuccess(localUser.id, localUser.role)
                                     } else {
-                                        errorMessage = "Invalid email address or password."
+                                        errorMessage = "Server unreachable. Login failed (credentials not cached locally)."
                                     }
                                 }
                             } else {
                                 // Sign Up Flow
-                                if (syncEnabled) {
-                                    val registerError = NetworkClient.register(syncUrl, email, name, phone, password, role)
-                                    if (registerError == null) {
-                                        val user = NetworkClient.login(syncUrl, email, password)
-                                        isLoading = false
-                                        if (user != null) {
-                                            dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
-                                            onLoginSuccess(user.id, user.role)
-                                        } else {
-                                            errorMessage = "Signup succeeded but login failed."
-                                        }
+                                val registerError = NetworkClient.register(syncUrl, email, name, phone, password, role)
+                                if (registerError == null) {
+                                    val user = NetworkClient.login(syncUrl, email, password)
+                                    isLoading = false
+                                    if (user != null && user.id != -1) {
+                                        val sharedPrefs = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
+                                        sharedPrefs.edit().putBoolean("sync_enabled", true).apply()
+                                        
+                                        dbHelper.registerUser(user.email, user.name, user.phone, password, user.role, id = user.id)
+                                        onLoginSuccess(user.id, user.role)
                                     } else {
-                                        isLoading = false
-                                        errorMessage = registerError
+                                        errorMessage = "Signup succeeded but login failed."
                                     }
-                                } else {
+                                } else if (registerError.startsWith("API connection failed") || registerError.startsWith("Server error")) {
+                                    // Server connection failure, fallback to local registration
                                     val success = dbHelper.registerUser(email, name, phone, password, role)
                                     isLoading = false
                                     if (success) {
-                                        val user = dbHelper.loginUser(email, password)
-                                        if (user != null) {
-                                            onLoginSuccess(user.id, user.role)
+                                        val localUser = dbHelper.loginUser(email, password)
+                                        if (localUser != null) {
+                                            val sharedPrefs = context.getSharedPreferences("helpeez_settings", Context.MODE_PRIVATE)
+                                            sharedPrefs.edit().putBoolean("sync_enabled", false).apply()
+                                            
+                                            android.widget.Toast.makeText(context, "Running in Offline mode.", android.widget.Toast.LENGTH_LONG).show()
+                                            onLoginSuccess(localUser.id, localUser.role)
                                         } else {
                                             errorMessage = "Registration completed. Please try logging in."
                                         }
                                     } else {
                                         errorMessage = "Registration failed. Email may already exist."
                                     }
+                                } else {
+                                    isLoading = false
+                                    errorMessage = registerError
                                 }
                             }
                         }

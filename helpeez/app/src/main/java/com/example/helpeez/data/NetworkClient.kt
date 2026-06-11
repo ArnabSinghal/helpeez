@@ -134,7 +134,7 @@ object NetworkClient {
         }
     }
 
-    suspend fun fetchHomes(baseUrl: String, userId: Int): List<HomeDetailsData> = withContext(Dispatchers.IO) {
+    suspend fun fetchHomes(baseUrl: String, userId: Int): List<HomeDetailsData>? = withContext(Dispatchers.IO) {
         val homes = mutableListOf<HomeDetailsData>()
         try {
             val url = "${baseUrl.trimEnd('/')}/homes?user_id=$userId"
@@ -174,15 +174,18 @@ object NetworkClient {
                             )
                         )
                     }
+                    return@withContext homes
+                } else {
+                    return@withContext null
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            return@withContext null
         }
-        return@withContext homes
     }
 
-    suspend fun fetchJobsForHelper(baseUrl: String, helperId: Int): List<HomeDetailsData> = withContext(Dispatchers.IO) {
+    suspend fun fetchJobsForHelper(baseUrl: String, helperId: Int): List<HomeDetailsData>? = withContext(Dispatchers.IO) {
         val homes = mutableListOf<HomeDetailsData>()
         try {
             val url = "${baseUrl.trimEnd('/')}/homes?helper_id=$helperId"
@@ -222,12 +225,15 @@ object NetworkClient {
                             )
                         )
                     }
+                    return@withContext homes
+                } else {
+                    return@withContext null
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            return@withContext null
         }
-        return@withContext homes
     }
 
     suspend fun updateHomeShiftStatus(baseUrl: String, homeId: Int, status: String, checkInTime: Long): Boolean = withContext(Dispatchers.IO) {
